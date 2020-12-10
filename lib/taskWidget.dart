@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'models/Task.dart';
 import 'tasks_mock.dart';
 
-
-
 class MyPage extends StatefulWidget {
   String userName = 'Abdalmohsen';
+
   MyPage({this.userName});
 
   @override
@@ -20,10 +19,23 @@ class MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
   void initState() {
     // TODO: implement initState
     super.initState();
-    tabController = TabController(length: 3, vsync: this); // vsync need pass the active class for tab bare
+    tabController = TabController(
+        length: 3,
+        vsync: this); // vsync need pass the active class for tab bare
   }
 
   int bnbIndex = 0;
+
+  toggleTaskStatuse(Task task, bool newSate) {
+    int indexOfCurrentTask = tasks.indexOf(task);
+    tasks[indexOfCurrentTask].isComplete = newSate;
+    setState(() {});
+  }
+
+  toggleTaskRemove(Task task) {
+    tasks.remove(task);
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,14 +66,24 @@ class MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
       body: TabBarView(controller: tabController, children: [
         SingleChildScrollView(
           child: Column(
-            children: tasks.map((e) => TodoWidget(e)).toList(),
+            children: tasks
+                .map((e) => TodoWidget(
+                      e,
+                      stateFun: toggleTaskStatuse,
+                      deleteTaskFun: toggleTaskRemove,
+                    ))
+                .toList(),
           ),
         ),
         SingleChildScrollView(
           child: Column(
             children: tasks
                 .where((element) => element.isComplete == true)
-                .map((e) => TodoWidget(e))
+                .map((e) => TodoWidget(
+                      e,
+                      stateFun: toggleTaskStatuse,
+                      deleteTaskFun: toggleTaskRemove,
+                    ))
                 .toList(),
           ),
         ),
@@ -69,7 +91,11 @@ class MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
           child: Column(
             children: tasks
                 .where((element) => !element.isComplete)
-                .map((e) => TodoWidget(e))
+                .map((e) => TodoWidget(
+                      e,
+                      stateFun: toggleTaskStatuse,
+                      deleteTaskFun: toggleTaskRemove,
+                    ))
                 .toList(),
           ),
         ),
@@ -94,8 +120,10 @@ class MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
 
 class TodoWidget extends StatefulWidget {
   Task task;
-  Function fun;
-  TodoWidget(this.task, {this.fun});
+  Function stateFun;
+  Function deleteTaskFun;
+
+  TodoWidget(this.task, {this.stateFun, this.deleteTaskFun});
 
   @override
   _TodoWidgetState createState() => _TodoWidgetState();
@@ -109,20 +137,17 @@ class _TodoWidgetState extends State<TodoWidget> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          IconButton(
+              icon: Icon(Icons.cancel_outlined, color: Colors.red),
+              onPressed: () {
+                widget.deleteTaskFun(widget.task);
+              }),
           Text(widget.task.taskName),
           Checkbox(
               value: widget.task.isComplete,
               onChanged: (value) {
                 widget.task.isComplete = value;
-                int indexOfCurrentTask = tasks.indexOf(widget.task);
-                print(indexOfCurrentTask);
-
-                setState(() {
-                  tasks.insert(
-                      indexOfCurrentTask, Task(widget.task.taskName, value));
-
-
-                });
+                widget.stateFun(widget.task, value);
               })
         ],
       ),
